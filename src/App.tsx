@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { STARTER_EXHIBITS } from './data/exhibits';
 import { MUSEUM_WINGS } from './data/wings';
 import { PRESET_TRAILS } from './data/presetTrails';
-import type { Exhibit, MuseumWingId } from './types/exhibit';
+import type { Exhibit, MuseumWing, MuseumWingId } from './types/exhibit';
 import type { MuseumTrail } from './types/trail';
 import type { VisitorState } from './types/visitor';
 import {
@@ -10,6 +10,7 @@ import {
   saveVisitorState,
   decodeTrailFromUrl,
 } from './services/storageService';
+import { loadMuseumDataWithFallback } from './services/apiService';
 
 // Components
 import { Navbar } from './components/layout/Navbar';
@@ -27,6 +28,13 @@ import './App.css';
 export function App() {
   // Visitor State persisted in localStorage
   const [visitorState, setVisitorState] = useState<VisitorState>(() => loadVisitorState());
+
+  // Dynamic Museum Datasets (FastAPI / MySQL backend with verified local fallback)
+  const [exhibits, setExhibits] = useState<Exhibit[]>(STARTER_EXHIBITS);
+  const [wings, setWings] = useState<MuseumWing[]>(MUSEUM_WINGS);
+  const [presetTrails, setPresetTrails] = useState<MuseumTrail[]>(PRESET_TRAILS);
+  const [isLoadingBackend, setIsLoadingBackend] = useState(true);
+  const [isLiveBackend, setIsLiveBackend] = useState<boolean | null>(null);
 
   // Discovery & Filter State
   const [searchQuery, setSearchQuery] = useState('');
@@ -55,6 +63,39 @@ export function App() {
     setTimeout(() => setToastMessage(null), 3500);
   }, []);
 
+  // Fetch live museum data from FastAPI / MySQL on mount
+  useEffect(() => {
+    let isMounted = true;
+
+    loadMuseumDataWithFallback()
+      .then((res) => {
+        if (!isMounted) return;
+        if (res.wings && res.wings.length > 0) setWings(res.wings);
+        if (res.exhibits && res.exhibits.length > 0) setExhibits(res.exhibits);
+        if (res.trails && res.trails.length > 0) setPresetTrails(res.trails);
+        setIsLiveBackend(res.isLive);
+
+        if (res.isLive) {
+          // Subtle toast confirmation of live API connection
+          showToast('⚡ Connected to live FastAPI & MySQL backend');
+        } else if (res.error) {
+          console.info('Backend unavailable; running on verified local museum archive.');
+        }
+      })
+      .catch((err) => {
+        if (!isMounted) return;
+        console.warn('API error, using local dataset:', err);
+        setIsLiveBackend(false);
+      })
+      .finally(() => {
+        if (isMounted) setIsLoadingBackend(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [showToast]);
+
   // Save to localStorage on visitorState update
   useEffect(() => {
     saveVisitorState(visitorState);
@@ -64,7 +105,7 @@ export function App() {
   const filteredExhibits = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
 
-    return STARTER_EXHIBITS.filter((exhibit) => {
+    return exhibits.filter((exhibit) => {
       // Wing filter
       if (selectedWingId !== 'all' && exhibit.wingId !== selectedWingId) {
         return false;
@@ -91,16 +132,16 @@ export function App() {
 
       return true;
     });
-  }, [searchQuery, selectedWingId]);
+  }, [exhibits, searchQuery, selectedWingId]);
 
   // Wing counts for filter bar badges
   const wingCounts = useMemo(() => {
     const counts: Record<string, number> = {};
-    STARTER_EXHIBITS.forEach((ex) => {
+    exhibits.forEach((ex) => {
       counts[ex.wingId] = (counts[ex.wingId] || 0) + 1;
     });
     return counts;
-  }, []);
+  }, [exhibits]);
 
   // Exhibit Selection Handler
   const handleSelectExhibit = useCallback((exhibit: Exhibit) => {
@@ -171,24 +212,25 @@ export function App() {
 
   // "Surprise Me" action: random teleport
   const handleSurpriseMe = useCallback(() => {
-    const randomIndex = Math.floor(Math.random() * STARTER_EXHIBITS.length);
-    const randomExhibit = STARTER_EXHIBITS[randomIndex];
+    if (exhibits.length === 0) return;
+    const randomIndex = Math.floor(Math.random() * exhibits.length);
+    const randomExhibit = exhibits[randomIndex];
     setSelectedExhibit(randomExhibit);
     setIsDetailOpen(true);
     showToast(`🎲 Teleported to "${randomExhibit.title}"!`);
-  }, [showToast]);
+  }, [exhibits, showToast]);
 
   // Trail management handlers
   const handleStartTrail = useCallback((trail: MuseumTrail) => {
     setActiveTrail(trail);
     setActiveTrailStopIndex(0);
     const firstStopId = trail.exhibitIds[0];
-    const firstExhibit = STARTER_EXHIBITS.find((e) => e.id === firstStopId);
+    const firstExhibit = exhibits.find((e) => e.id === firstStopId);
     if (firstExhibit) {
       setSelectedExhibit(firstExhibit);
     }
     showToast(`🧭 Started expedition: "${trail.title}"`);
-  }, [showToast]);
+  }, [exhibits, showToast]);
 
   const handleNextTrailStop = useCallback(() => {
     if (!activeTrail) return;
@@ -196,10 +238,10 @@ export function App() {
       const nextIdx = activeTrailStopIndex + 1;
       setActiveTrailStopIndex(nextIdx);
       const nextStopId = activeTrail.exhibitIds[nextIdx];
-      const nextExhibit = STARTER_EXHIBITS.find((e) => e.id === nextStopId);
+      const nextExhibit = exhibits.find((e) => e.id === nextStopId);
       if (nextExhibit) setSelectedExhibit(nextExhibit);
     }
-  }, [activeTrail, activeTrailStopIndex]);
+  }, [activeTrail, activeTrailStopIndex, exhibits]);
 
   const handlePrevTrailStop = useCallback(() => {
     if (!activeTrail) return;
@@ -207,10 +249,10 @@ export function App() {
       const prevIdx = activeTrailStopIndex - 1;
       setActiveTrailStopIndex(prevIdx);
       const prevStopId = activeTrail.exhibitIds[prevIdx];
-      const prevExhibit = STARTER_EXHIBITS.find((e) => e.id === prevStopId);
+      const prevExhibit = exhibits.find((e) => e.id === prevStopId);
       if (prevExhibit) setSelectedExhibit(prevExhibit);
     }
-  }, [activeTrail, activeTrailStopIndex]);
+  }, [activeTrail, activeTrailStopIndex, exhibits]);
 
   const handleExitTrail = useCallback(() => {
     setActiveTrail(null);
@@ -260,14 +302,14 @@ export function App() {
   const currentTrailStopExhibit = useMemo(() => {
     if (!activeTrail) return undefined;
     const currentId = activeTrail.exhibitIds[activeTrailStopIndex];
-    return STARTER_EXHIBITS.find((e) => e.id === currentId);
-  }, [activeTrail, activeTrailStopIndex]);
+    return exhibits.find((e) => e.id === currentId);
+  }, [activeTrail, activeTrailStopIndex, exhibits]);
 
   // Wing of current selected exhibit
   const selectedWing = useMemo(() => {
     if (!selectedExhibit) return undefined;
-    return MUSEUM_WINGS.find((w) => w.id === selectedExhibit.wingId);
-  }, [selectedExhibit]);
+    return wings.find((w) => w.id === selectedExhibit.wingId);
+  }, [selectedExhibit, wings]);
 
   // Custom trails formatted as MuseumTrail
   const customMuseumTrails = useMemo(() => {
@@ -302,17 +344,19 @@ export function App() {
         onOpenPassport={() => setIsPassportOpen(true)}
         onOpenAwsInfo={() => setIsAwsInfoOpen(true)}
         visitedCount={visitorState.visitedExhibitIds.length}
-        totalCount={STARTER_EXHIBITS.length}
+        totalCount={exhibits.length}
         favoritesCount={visitorState.favorites.length}
+        isLiveBackend={isLiveBackend}
+        isLoadingBackend={isLoadingBackend}
       />
 
       {/* Wing Filter Bar */}
       <WingFilterBar
-        wings={MUSEUM_WINGS}
+        wings={wings}
         selectedWingId={selectedWingId}
         onSelectWing={setSelectedWingId}
         wingCounts={wingCounts}
-        totalCount={STARTER_EXHIBITS.length}
+        totalCount={exhibits.length}
         filteredCount={filteredExhibits.length}
       />
 
@@ -321,8 +365,8 @@ export function App() {
         {viewMode === 'constellation' ? (
           <ConstellationMap
             exhibits={filteredExhibits}
-            allExhibits={STARTER_EXHIBITS}
-            wings={MUSEUM_WINGS}
+            allExhibits={exhibits}
+            wings={wings}
             selectedExhibitId={selectedExhibit?.id || null}
             onSelectExhibit={handleSelectExhibit}
             visitedExhibitIds={visitorState.visitedExhibitIds}
@@ -334,7 +378,7 @@ export function App() {
           <div className="container" style={{ padding: '1.5rem' }}>
             <GalleryGrid
               exhibits={filteredExhibits}
-              wings={MUSEUM_WINGS}
+              wings={wings}
               visitedExhibitIds={visitorState.visitedExhibitIds}
               favoriteExhibitIds={visitorState.favorites}
               onSelectExhibit={handleSelectExhibit}
@@ -387,8 +431,8 @@ export function App() {
       <VisitorPassportModal
         isOpen={isPassportOpen}
         onClose={() => setIsPassportOpen(false)}
-        allExhibits={STARTER_EXHIBITS}
-        wings={MUSEUM_WINGS}
+        allExhibits={exhibits}
+        wings={wings}
         visitedExhibitIds={visitorState.visitedExhibitIds}
         favoriteExhibitIds={visitorState.favorites}
         onSelectExhibit={(ex) => {
@@ -404,9 +448,9 @@ export function App() {
       <TrailModal
         isOpen={isTrailModalOpen}
         onClose={() => setIsTrailModalOpen(false)}
-        presetTrails={PRESET_TRAILS}
+        presetTrails={presetTrails}
         customTrails={customMuseumTrails}
-        allExhibits={STARTER_EXHIBITS}
+        allExhibits={exhibits}
         onStartTrail={handleStartTrail}
         onCreateCustomTrail={handleCreateCustomTrail}
         onDeleteCustomTrail={handleDeleteCustomTrail}

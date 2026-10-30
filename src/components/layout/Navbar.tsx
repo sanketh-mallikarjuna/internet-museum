@@ -10,6 +10,8 @@ interface NavbarProps {
   visitedCount: number;
   totalCount: number;
   favoritesCount: number;
+  isLiveBackend?: boolean | null;
+  isLoadingBackend?: boolean;
 }
 
 export function Navbar({
@@ -24,6 +26,8 @@ export function Navbar({
   visitedCount,
   totalCount,
   favoritesCount,
+  isLiveBackend,
+  isLoadingBackend,
 }: NavbarProps) {
   return (
     <header className="museum-navbar">
@@ -127,6 +131,23 @@ export function Navbar({
               </span>
             )}
           </button>
+
+          {/* Backend API Connection Status */}
+          <div
+            className={`nav-status-badge ${isLoadingBackend ? 'loading' : isLiveBackend ? 'online' : 'fallback'}`}
+            title={
+              isLoadingBackend
+                ? 'Connecting to FastAPI backend...'
+                : isLiveBackend
+                  ? 'Connected to live FastAPI & MySQL backend (http://127.0.0.1:8000)'
+                  : 'Running in offline fallback mode with verified local museum archive'
+            }
+          >
+            <span className="status-indicator-dot" aria-hidden="true" />
+            <span className="status-label">
+              {isLoadingBackend ? 'Connecting...' : isLiveBackend ? 'API Live' : 'Archive Mode'}
+            </span>
+          </div>
 
           {/* AWS Cloud Badge */}
           <button

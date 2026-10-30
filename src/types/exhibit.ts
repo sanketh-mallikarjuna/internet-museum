@@ -12,6 +12,8 @@ export interface MuseumWing {
   description: string;
   accentColor: string;
   icon: string;
+  displayOrder?: number;
+  exhibitCount?: number;
 }
 
 export type InteractionLevel = 'ambient' | 'interactive' | 'playable' | 'audio-visual';
