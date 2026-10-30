@@ -1,3 +1,5 @@
+import type { CuratorUser } from '../../types/auth';
+
 interface NavbarProps {
   searchQuery: string;
   onSearchChange: (q: string) => void;
@@ -12,7 +14,11 @@ interface NavbarProps {
   favoritesCount: number;
   isLiveBackend?: boolean | null;
   isLoadingBackend?: boolean;
+  currentUser?: CuratorUser | null;
+  onOpenAuth?: () => void;
+  onLogout?: () => void;
 }
+
 
 export function Navbar({
   searchQuery,
@@ -28,6 +34,9 @@ export function Navbar({
   favoritesCount,
   isLiveBackend,
   isLoadingBackend,
+  currentUser,
+  onOpenAuth,
+  onLogout,
 }: NavbarProps) {
   return (
     <header className="museum-navbar">
@@ -148,6 +157,39 @@ export function Navbar({
               {isLoadingBackend ? 'Connecting...' : isLiveBackend ? 'API Live' : 'Archive Mode'}
             </span>
           </div>
+
+          {/* Curator Authentication Control */}
+          {currentUser ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <div
+                className="curator-profile-pill"
+                title={`Signed in as Curator: ${currentUser.email}`}
+              >
+                <span aria-hidden="true">{currentUser.avatar || '🏛️'}</span>
+                <span className="btn-label-desktop">{currentUser.username}</span>
+                <span className="curator-role-tag">{currentUser.role}</span>
+              </div>
+              <button
+                type="button"
+                className="nav-btn curator-logout-btn"
+                onClick={onLogout}
+                title="Sign out of curator profile"
+                style={{ padding: '0.35rem 0.65rem', fontSize: '0.78rem' }}
+              >
+                <span>Sign Out</span>
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="nav-btn curator-signin-btn"
+              onClick={onOpenAuth}
+              title="Sign in or register as a museum curator"
+            >
+              <span aria-hidden="true">🔑</span>
+              <span className="btn-label-desktop">Curator Sign In</span>
+            </button>
+          )}
 
           {/* AWS Cloud Badge */}
           <button

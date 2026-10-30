@@ -53,6 +53,8 @@ export function ExhibitDetailModal({
     hostname = exhibit.url;
   }
 
+  const accessionCode = `ACCESSION #IM-${exhibit.year || '2000'}-${exhibit.id.replace(/[^a-zA-Z0-9]/g, '').slice(0, 4).toUpperCase()}`;
+
   return (
     <div
       className="modal-backdrop"
@@ -64,33 +66,44 @@ export function ExhibitDetailModal({
       <div
         className="modal-container glass-panel exhibit-modal"
         onClick={(e) => e.stopPropagation()}
-        style={{ borderTop: `4px solid ${accentColor}` }}
+        style={{
+          borderTop: `4px solid ${accentColor}`,
+          boxShadow: `0 25px 60px -15px rgba(0, 0, 0, 0.85), 0 0 30px -8px ${accentColor}33`,
+        }}
       >
-        {/* Header */}
+        {/* Curatorial Plaque Header */}
         <div className="modal-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-            <span style={{ fontSize: '1.4rem' }}>{wing?.icon || '🏛️'}</span>
+            <span style={{ fontSize: '1.6rem' }} aria-hidden="true">{wing?.icon || '🏛️'}</span>
             <div>
-              <span
-                className="tag-badge"
-                style={{
-                  color: accentColor,
-                  borderColor: `${accentColor}55`,
-                  fontSize: '0.72rem',
-                }}
-              >
-                {wing?.name}
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
+                <span
+                  className="tag-badge"
+                  style={{
+                    color: accentColor,
+                    borderColor: `${accentColor}55`,
+                    background: `${accentColor}15`,
+                    fontSize: '0.72rem',
+                    fontWeight: 600,
+                  }}
+                >
+                  {wing?.name}
+                </span>
+                <span className="museum-catalog-pill" title="Museum Archive Catalog Number">
+                  {accessionCode}
+                </span>
+              </div>
               {exhibit.year && (
                 <span
                   style={{
-                    marginLeft: '0.5rem',
+                    display: 'block',
+                    marginTop: '0.2rem',
                     fontFamily: 'var(--font-mono)',
-                    fontSize: '0.75rem',
+                    fontSize: '0.74rem',
                     color: 'var(--text-muted)',
                   }}
                 >
-                  circa {exhibit.year}
+                  Established in {exhibit.year}
                 </span>
               )}
             </div>
@@ -104,7 +117,7 @@ export function ExhibitDetailModal({
               title={isFavorited ? 'Remove from favorites' : 'Save to favorites'}
               aria-label={isFavorited ? 'Remove from favorites' : 'Save to favorites'}
             >
-              {isFavorited ? '♥ Favorited' : '♡ Favorite'}
+              {isFavorited ? '♥ Saved' : '♡ Save'}
             </button>
             <button
               type="button"
@@ -129,14 +142,23 @@ export function ExhibitDetailModal({
             </p>
           )}
 
-          <div className="exhibit-tagline-quote">
-            "{exhibit.tagline}"
+          <div
+            className="exhibit-tagline-quote"
+            style={{
+              borderColor: accentColor,
+              background: `linear-gradient(90deg, ${accentColor}16, transparent)`,
+              color: '#f0f9ff',
+            }}
+          >
+            <span style={{ color: accentColor, fontWeight: 700, marginRight: '0.35rem' }} aria-hidden="true">“</span>
+            {exhibit.tagline}
+            <span style={{ color: accentColor, fontWeight: 700, marginLeft: '0.35rem' }} aria-hidden="true">”</span>
           </div>
 
-          {/* Curatorial Statement */}
+          {/* Curatorial Statement & Plaque */}
           <div className="curator-section">
             <h4 className="curator-heading">
-              <span>🏛️</span> Curator’s Statement &amp; Significance
+              <span>🏛️</span> Curatorial Significance &amp; Preservation Note
             </h4>
             <p className="curator-text">{exhibit.curatorNotes}</p>
           </div>
@@ -144,7 +166,7 @@ export function ExhibitDetailModal({
           {/* Tags & Metadata Pills */}
           <div className="exhibit-meta-row">
             <div className="meta-item">
-              <span className="meta-label">Interaction:</span>
+              <span className="meta-label">Experience:</span>
               <span className="tag-badge" style={{ textTransform: 'capitalize' }}>
                 {exhibit.interactionLevel}
               </span>
@@ -154,13 +176,13 @@ export function ExhibitDetailModal({
               <span className="mono-code">{hostname}</span>
             </div>
             <div className="meta-item">
-              <span className="meta-label">Passport Status:</span>
+              <span className="meta-label">Passport:</span>
               <button
                 type="button"
                 className={`passport-toggle-btn ${isVisited ? 'visited' : ''}`}
                 onClick={() => onToggleVisited(exhibit.id)}
               >
-                {isVisited ? '✓ Stamped in Passport' : '○ Mark as Visited'}
+                {isVisited ? '✓ Stamped in Passport' : '○ Mark as Explored'}
               </button>
             </div>
           </div>
@@ -174,14 +196,14 @@ export function ExhibitDetailModal({
           </div>
 
           {onAddToTrailDraft && (
-            <div style={{ marginTop: '1rem' }}>
+            <div style={{ marginTop: '1.25rem' }}>
               <button
                 type="button"
                 className="btn-secondary"
-                style={{ fontSize: '0.82rem', padding: '0.35rem 0.75rem' }}
+                style={{ fontSize: '0.82rem', padding: '0.4rem 0.85rem' }}
                 onClick={() => onAddToTrailDraft(exhibit.id)}
               >
-                {isAddedToTrailDraft ? '✓ Added to Active Trail Draft' : '+ Add to Trail Draft'}
+                {isAddedToTrailDraft ? '✓ Stored in Active Trail Draft' : '+ Add to Trail Draft'}
               </button>
             </div>
           )}
@@ -194,27 +216,31 @@ export function ExhibitDetailModal({
               type="button"
               className="btn-secondary"
               onClick={onPrevExhibit}
-              title="Previous exhibit (Left Arrow)"
+              title="Previous exhibit (Left Arrow shortcut)"
             >
-              ← Previous
+              ← <span className="kbd-hint">Prev</span>
             </button>
             <button
               type="button"
               className="btn-secondary"
               onClick={onNextExhibit}
-              title="Next exhibit (Right Arrow)"
+              title="Next exhibit (Right Arrow shortcut)"
             >
-              Next →
+              <span className="kbd-hint">Next</span> →
             </button>
           </div>
 
           <button
             type="button"
             className="btn-primary btn-explore-outbound"
+            style={{
+              background: `linear-gradient(135deg, ${accentColor}, #0284c7)`,
+              boxShadow: `0 4px 18px -2px ${accentColor}66`,
+            }}
             onClick={() => onExploreOutbound(exhibit)}
-            title="Launch exhibit website in new tab"
+            title="Launch live digital exhibit website in new tab"
           >
-            <span>Explore Website</span>
+            <span>Explore Live Website</span>
             <span aria-hidden="true">↗</span>
           </button>
         </div>

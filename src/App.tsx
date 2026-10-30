@@ -22,12 +22,19 @@ import { ExhibitDetailModal } from './components/exhibit/ExhibitDetailModal';
 import { VisitorPassportModal } from './components/passport/VisitorPassportModal';
 import { TrailModal } from './components/trails/TrailModal';
 import { ActiveTrailBar } from './components/trails/ActiveTrailBar';
+import { AuthModal } from './components/auth/AuthModal';
+import type { CuratorUser } from './types/auth';
+import { authService } from './services/authService';
 
 import './App.css';
 
 export function App() {
   // Visitor State persisted in localStorage
   const [visitorState, setVisitorState] = useState<VisitorState>(() => loadVisitorState());
+
+  // Curator Authentication State (JWT-backed, does not overwrite visitor state)
+  const [currentUser, setCurrentUser] = useState<CuratorUser | null>(() => authService.getUser());
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   // Dynamic Museum Datasets (FastAPI / MySQL backend with verified local fallback)
   const [exhibits, setExhibits] = useState<Exhibit[]>(STARTER_EXHIBITS);
@@ -62,6 +69,29 @@ export function App() {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3500);
   }, []);
+
+  // Validate stored curator token on mount
+  useEffect(() => {
+    if (authService.getToken()) {
+      authService.getMe().then((curator) => {
+        if (curator) {
+          setCurrentUser(curator);
+        }
+      });
+    }
+  }, []);
+
+  const handleLoginSuccess = useCallback((user: CuratorUser) => {
+    setCurrentUser(user);
+    showToast(`🏛️ Welcome, Curator ${user.username}!`);
+  }, [showToast]);
+
+  const handleLogout = useCallback(() => {
+    authService.logout();
+    setCurrentUser(null);
+    showToast('Curator session closed. Continuing as guest.');
+  }, [showToast]);
+
 
   // Fetch live museum data from FastAPI / MySQL on mount
   useEffect(() => {
@@ -348,6 +378,9 @@ export function App() {
         favoritesCount={visitorState.favorites.length}
         isLiveBackend={isLiveBackend}
         isLoadingBackend={isLoadingBackend}
+        currentUser={currentUser}
+        onOpenAuth={() => setIsAuthModalOpen(true)}
+        onLogout={handleLogout}
       />
 
       {/* Wing Filter Bar */}
@@ -460,6 +493,13 @@ export function App() {
       <AwsInfoModal
         isOpen={isAwsInfoOpen}
         onClose={() => setIsAwsInfoOpen(false)}
+      />
+
+      {/* Curator Authentication Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onLoginSuccess={handleLoginSuccess}
       />
     </div>
   );

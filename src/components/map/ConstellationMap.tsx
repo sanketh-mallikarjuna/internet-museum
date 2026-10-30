@@ -237,6 +237,12 @@ export function ConstellationMap({
             <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
           </radialGradient>
 
+          {/* Delicate Celestial Coordinate Grid */}
+          <pattern id="celestial-grid" width="60" height="60" patternUnits="userSpaceOnUse">
+            <path d="M 60 0 L 0 0 0 60" fill="none" stroke="rgba(255, 255, 255, 0.035)" strokeWidth="0.8" />
+            <circle cx="60" cy="60" r="0.8" fill="rgba(255, 255, 255, 0.12)" />
+          </pattern>
+
           {/* Node Glow Filter */}
           <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
             <feGaussianBlur stdDeviation="4" result="blur" />
@@ -248,12 +254,15 @@ export function ConstellationMap({
         </defs>
 
         <g transform={`translate(${pan.x}, ${pan.y}) scale(${zoom})`} transform-origin="500 350">
+          {/* Subtle Celestial Coordinate Matrix */}
+          <rect x="-200" y="-150" width="1400" height="1000" fill="url(#celestial-grid)" pointerEvents="none" />
+
           {/* Ambient Cosmic Nebulae */}
-          <circle cx={500} cy={360} r={180} fill="url(#nebula-atrium)" />
-          <circle cx={760} cy={190} r={170} fill="url(#nebula-generative)" />
-          <circle cx={260} cy={220} r={170} fill="url(#nebula-curiosities)" />
-          <circle cx={260} cy={500} r={170} fill="url(#nebula-retro)" />
-          <circle cx={740} cy={500} r={170} fill="url(#nebula-fiction)" />
+          <circle cx={500} cy={360} r={200} fill="url(#nebula-atrium)" />
+          <circle cx={760} cy={190} r={190} fill="url(#nebula-generative)" />
+          <circle cx={260} cy={220} r={190} fill="url(#nebula-curiosities)" />
+          <circle cx={260} cy={500} r={190} fill="url(#nebula-retro)" />
+          <circle cx={740} cy={500} r={190} fill="url(#nebula-fiction)" />
 
           {/* Wing Landmark Labels */}
           {Object.entries(wingCenters).map(([key, center]) => (

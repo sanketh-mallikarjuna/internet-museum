@@ -18,6 +18,11 @@ class Settings(BaseSettings):
     # Direct database URL override (e.g. for CI, testing, or custom engines)
     DATABASE_URL: Optional[str] = None
 
+    # JWT Authentication settings (configured via environment variables)
+    JWT_SECRET_KEY: str = "internet-museum-curator-jwt-secret-key-change-in-production"
+    JWT_ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
+
     # Allowed CORS origins for frontend
     CORS_ORIGINS: List[str] = [
         "http://localhost:5173",

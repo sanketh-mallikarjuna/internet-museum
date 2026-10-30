@@ -44,6 +44,8 @@ export function WingFilterBar({
               style={{
                 borderColor: isSelected ? wing.accentColor : undefined,
                 color: isSelected ? '#ffffff' : undefined,
+                boxShadow: isSelected ? `0 0 16px -2px ${wing.accentColor}55` : undefined,
+                background: isSelected ? `linear-gradient(135deg, ${wing.accentColor}28, ${wing.accentColor}12)` : undefined,
               }}
               onClick={() => onSelectWing(isSelected ? 'all' : wing.id)}
             >
@@ -53,7 +55,8 @@ export function WingFilterBar({
                 className="filter-chip-count"
                 style={{
                   backgroundColor: isSelected ? wing.accentColor : undefined,
-                  color: isSelected ? '#0a0c14' : undefined,
+                  color: isSelected ? '#070910' : undefined,
+                  fontWeight: isSelected ? 700 : undefined,
                 }}
               >
                 {count}

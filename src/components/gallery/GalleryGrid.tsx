@@ -22,14 +22,27 @@ export function GalleryGrid({
   if (exhibits.length === 0) {
     return (
       <div className="empty-state glass-panel">
-        <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>🔭</div>
-        <h3>No Exhibits Found</h3>
-        <p style={{ color: 'var(--text-secondary)', maxWidth: '420px', margin: '0.5rem auto 1.5rem' }}>
-          Try clearing your search query or switching museum wing filters to uncover more artifacts.
+        <div style={{ fontSize: '2.8rem', marginBottom: '1rem' }} aria-hidden="true">🔭</div>
+        <h3>No Curated Exhibits Found</h3>
+        <p style={{ color: 'var(--text-secondary)', maxWidth: '440px', margin: '0.5rem auto 1.5rem', fontSize: '0.925rem' }}>
+          Try clearing your search query or switching museum wing filters to uncover more digital artifacts.
         </p>
       </div>
     );
   }
+
+  const getInteractionMeta = (level: string) => {
+    switch (level) {
+      case 'playable':
+        return { label: 'Playable Sandbox', icon: '🎮' };
+      case 'audio-visual':
+        return { label: 'Audiovisual Experience', icon: '🎵' };
+      case 'ambient':
+        return { label: 'Ambient Artifact', icon: '🌌' };
+      default:
+        return { label: 'Interactive', icon: '⚡' };
+    }
+  };
 
   return (
     <div className="gallery-grid-container">
@@ -39,12 +52,16 @@ export function GalleryGrid({
           const isVisited = visitedExhibitIds.includes(exhibit.id);
           const isFavorited = favoriteExhibitIds.includes(exhibit.id);
           const accentColor = wing?.accentColor || 'var(--accent-cyan)';
+          const interaction = getInteractionMeta(exhibit.interactionLevel);
 
           return (
             <article
               key={exhibit.id}
               className="gallery-card glass-panel"
-              style={{ borderTop: `3px solid ${accentColor}` }}
+              style={{
+                borderTop: `3px solid ${accentColor}`,
+                ['--card-accent' as string]: accentColor,
+              }}
               onClick={() => onSelectExhibit(exhibit)}
               tabIndex={0}
               role="button"
@@ -52,11 +69,18 @@ export function GalleryGrid({
                 if (e.key === 'Enter') onSelectExhibit(exhibit);
               }}
             >
-              {/* Card Header */}
+              {/* Card Curatorial Header */}
               <div className="gallery-card-header">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <span className="tag-badge" style={{ color: accentColor, borderColor: `${accentColor}44` }}>
-                    {wing?.icon} {wing?.name}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
+                  <span
+                    className="tag-badge wing-badge"
+                    style={{
+                      color: accentColor,
+                      borderColor: `${accentColor}44`,
+                      background: `${accentColor}12`,
+                    }}
+                  >
+                    <span aria-hidden="true">{wing?.icon}</span> {wing?.name}
                   </span>
                   {exhibit.year && (
                     <span className="gallery-card-year">
@@ -68,7 +92,7 @@ export function GalleryGrid({
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                   {isVisited && (
                     <span className="visited-pill" title="You have explored this exhibit">
-                      ✓ Visited
+                      ✓ Explored
                     </span>
                   )}
                   <button
@@ -86,9 +110,25 @@ export function GalleryGrid({
                 </div>
               </div>
 
-              {/* Title & Tagline */}
+              {/* Sub-meta: Curator Pick & Interaction Type */}
+              <div className="gallery-card-submeta">
+                <span className="interaction-badge" title={`Interaction style: ${interaction.label}`}>
+                  <span aria-hidden="true">{interaction.icon}</span> {interaction.label}
+                </span>
+                {exhibit.isCuratorPick && (
+                  <span className="curator-pick-pill" title="Official Curatorial Spotlight">
+                    ★ Curator Spotlight
+                  </span>
+                )}
+              </div>
+
+              {/* Title & Curatorial Tagline */}
               <h3 className="gallery-card-title">{exhibit.title}</h3>
-              <p className="gallery-card-tagline">"{exhibit.tagline}"</p>
+              <p className="gallery-card-tagline">
+                <span className="tagline-quote-mark" aria-hidden="true">“</span>
+                {exhibit.tagline}
+                <span className="tagline-quote-mark" aria-hidden="true">”</span>
+              </p>
 
               {/* Curator Note Excerpt */}
               <p className="gallery-card-notes">
@@ -97,7 +137,7 @@ export function GalleryGrid({
 
               {/* Tags */}
               <div className="gallery-card-tags">
-                {exhibit.tags.map((tag) => (
+                {exhibit.tags.slice(0, 4).map((tag) => (
                   <span key={tag} className="tag-badge">
                     #{tag}
                   </span>
@@ -110,12 +150,18 @@ export function GalleryGrid({
                   type="button"
                   className="btn-card-inspect"
                   onClick={() => onSelectExhibit(exhibit)}
+                  title="View exhibition plaque and curator notes"
                 >
-                  Curator Details
+                  <span aria-hidden="true">🔎</span> Plaque Details
                 </button>
                 <button
                   type="button"
                   className="btn-card-explore"
+                  style={{
+                    background: `linear-gradient(135deg, ${accentColor}25, ${accentColor}10)`,
+                    borderColor: `${accentColor}55`,
+                    color: accentColor,
+                  }}
                   onClick={() => onExploreOutbound(exhibit)}
                   title={`Open ${exhibit.title} in a new tab`}
                 >

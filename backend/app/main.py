@@ -7,7 +7,7 @@ from fastapi.responses import RedirectResponse
 from app.core.config import settings
 from app.database.session import init_db, SessionLocal
 from app.services.seed_service import seed_museum_data
-from app.routers import health_router, wings_router, exhibits_router, trails_router
+from app.routers import health_router, wings_router, exhibits_router, trails_router, auth_router
 
 # Configure logging
 logging.basicConfig(
@@ -58,6 +58,8 @@ app.include_router(health_router, prefix=settings.API_V1_STR)
 app.include_router(wings_router, prefix=settings.API_V1_STR)
 app.include_router(exhibits_router, prefix=settings.API_V1_STR)
 app.include_router(trails_router, prefix=settings.API_V1_STR)
+app.include_router(auth_router, prefix=settings.API_V1_STR)
+
 
 
 @app.api_route("/", methods=["GET", "HEAD"], include_in_schema=False)
