@@ -24,12 +24,14 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
 
     # Allowed CORS origins for frontend
-    CORS_ORIGINS: List[str] = [
+        CORS_ORIGINS: List[str] = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",
         "http://localhost:3000",
         "http://localhost:8000",
         "http://127.0.0.1:8000",
+        "https://main.dlumttn5sc1pi.amplifyapp.com",
+        "https://d2ern1a8c850fe.cloudfront.net",
     ]
 
     model_config = SettingsConfigDict(
